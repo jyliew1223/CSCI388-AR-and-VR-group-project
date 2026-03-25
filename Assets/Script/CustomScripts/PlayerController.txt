@@ -1,0 +1,81 @@
+using System.Collections;
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    private CustomGravityProvider m_GravityProvider;
+    private float rotationSpeed = 2f; // Adjust speed as needed
+    private Quaternion targetRotation;
+    private bool inverted, gravityInverted, gravityChange;
+    private float gravityRotationCount, rotationCount;
+
+    public Transform playerTransform;
+
+
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+        m_GravityProvider = GetComponentInChildren<CustomGravityProvider>();
+        targetRotation = playerTransform.rotation;
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        gravityInverted = m_GravityProvider.gravityInverted;
+        gravityRotationCount = m_GravityProvider.rotationCount;
+
+        if (inverted != gravityInverted)
+        {
+            OnGravityInverted();
+        }
+
+        if (gravityRotationCount != rotationCount)
+        {
+            OnGravityRotated();
+        }
+
+        if (gravityChange)
+            transformPlayer();   
+    }
+
+    public void targetRotationUpdate(float y)
+    {
+        targetRotation *= Quaternion.Euler(0, y, targetRotation.eulerAngles.z);
+        //Debug.Log(targetRotation);
+    }
+
+    public void OnGravityInverted()
+    {
+        inverted = gravityInverted;
+
+        //Rotate 180 degrees clockwise
+        targetRotation *= Quaternion.Euler(0, targetRotation.eulerAngles.y, 180);
+
+        gravityChange = true;
+
+        Physics.gravity = -Physics.gravity;
+
+        Debug.Log("Gravity has flipped!");
+    }
+
+    public void OnGravityRotated()
+    {
+        rotationCount = gravityRotationCount;
+
+        //Rotate 90 degrees clockwise
+        targetRotation *= Quaternion.Euler(0, targetRotation.eulerAngles.y, -90);
+        gravityChange = true;
+
+        Debug.Log("Gravity has rotated!");
+    }
+
+    void transformPlayer()
+    {
+        playerTransform.rotation = Quaternion.Slerp(playerTransform.rotation, targetRotation, Time.deltaTime * rotationSpeed); //Rotate the player with slerp
+
+        if (playerTransform.rotation == targetRotation)
+            gravityChange = false;
+    }
+}
